@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tim Robles</title>
+  <meta name="description" content="Tim Robles — Data & AI leader. Senior Director of Engineering, Data at Sense.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="canonical" href="https://timrobles.xyz">
+
+  <meta property="og:title" content="Tim Robles">
+  <meta property="og:description" content="Data & AI leader.">
+  <meta property="og:type" content="profile">
+  <meta property="og:url" content="https://timrobles.xyz">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Tim Robles">
+  <meta name="twitter:description" content="Data & AI leader.">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preload" as="font" type="font/woff2" href="jbm.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="jbm-italic.woff2" crossorigin>
+  <link rel="modulepreload" href="script.js">
+
+  <style>
+    @font-face {
+      font-family: 'JetBrains Mono';
+      font-style: normal;
+      font-weight: 400 500;
+      font-display: swap;
+      src: url('jbm.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'JetBrains Mono';
+      font-style: italic;
+      font-weight: 400 500;
+      font-display: swap;
+      src: url('jbm-italic.woff2') format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+    :root {
+      --accent: #7c7cf0;
+      --bg: #0a0a0a;
+      --fg: #ededed;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); color: var(--fg); }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: transparent;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+      font-size: 15px;
+      line-height: 1.65;
+      font-weight: 400;
+      letter-spacing: -0.005em;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    #bg, #bg-fallback {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      display: block;
+    }
+    #bg { display: none; }
+    #bg.active { display: block; }
+    #bg.active + #bg-fallback { display: none; }
+    #bg-fallback .torus ellipse {
+      fill: none;
+      stroke: var(--accent);
+      stroke-opacity: 0.5;
+      stroke-width: 0.3;
+    }
+
+    main {
+      position: relative;
+      max-width: 640px;
+      padding: 44px 56px;
+      margin: 48px;
+      background: rgba(10, 10, 10, 0.06);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      border: 1px solid rgba(237, 237, 237, 0.05);
+      border-radius: 2px;
+    }
+
+    header { margin-bottom: 64px; }
+    h1 {
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.04em;
+      margin: 0 0 12px;
+    }
+    .tagline {
+      font-size: 16px;
+      font-weight: 400;
+      font-style: italic;
+      opacity: 0.7;
+      margin: 0;
+    }
+    em { font-style: italic; }
+    section { margin-bottom: 48px; }
+    section:last-child { margin-bottom: 0; }
+    h2 {
+      font-size: 12px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.5;
+      margin: 0 0 12px;
+    }
+    p { margin: 0; font-size: 15px; }
+    strong { font-weight: 500; }
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      transition: opacity 0.2s ease;
+    }
+    strong a, a strong { color: var(--accent); }
+    a:hover { opacity: 0.7; }
+    a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 10px;
+    }
+    .links a {
+      display: inline-block;
+      padding: 10px 4px;
+      margin: -10px -4px;
+    }
+    .links span { opacity: 0.35; }
+
+    @media (max-width: 768px) {
+      main { padding: 28px 28px; margin: 24px; }
+      h1 { font-size: 26px; }
+      .tagline { font-size: 15px; }
+      header { margin-bottom: 48px; }
+      section { margin-bottom: 40px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      a { transition: none; }
+    }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Tim Robles",
+    "url": "https://timrobles.xyz",
+    "jobTitle": "Senior Director of Engineering, Data",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "Sense",
+      "url": "https://sensehq.com"
+    },
+    "sameAs": [
+      "https://www.linkedin.com/in/timrobles/",
+      "https://github.com/timwah"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <svg id="bg-fallback" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+    <g class="torus" transform="translate(70 60) rotate(-18)">
+      <ellipse cx="0" cy="0" rx="16" ry="11"/>
+      <ellipse cx="0" cy="0" rx="16" ry="3.5"/>
+      <ellipse cx="0" cy="0" rx="10" ry="2"/>
+      <ellipse cx="0" cy="0" rx="13" ry="7"/>
+    </g>
+  </svg>
+
+  <main>
+    <header>
+      <h1>Tim Robles</h1>
+      <p class="tagline"><em>Data &amp; AI leader</em></p>
+    </header>
+
+    <section>
+      <h2>Currently</h2>
+      <p><a href="https://sensehq.com"><strong>Sense</strong></a> — <em>Senior Director of Engineering, Data</em>.<br>Conversational AI that automates candidate engagement across SMS, chat, and email for talent acquisition teams.</p>
+    </section>
+
+    <section>
+      <h2>Projects</h2>
+      <p><a href="https://kalshi.com/ideas/profiles/pet.cruise"><strong>Chapi</strong></a> — <em>LLM advisor for Kalshi prediction markets</em>.<br>Production ML rigor: walk-forward CV, leak-proof holdouts, and constrained Bayesian optimization over a versioned strategy registry. Built end-to-end with Claude Code.</p>
+    </section>
+
+    <section>
+      <h2>Find me</h2>
+      <p class="links">
+        <a href="https://www.linkedin.com/in/timrobles/" rel="me">LinkedIn</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/timwah" rel="me">GitHub</a>
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
