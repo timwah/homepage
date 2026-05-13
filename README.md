@@ -7,7 +7,9 @@ No build step.
 
 - `index.html` — markup, inlined CSS, inlined font @font-face, JSON-LD,
   and preload/modulepreload hints. CSS edits happen inside `<style>`.
-- `script.js` — WebGL torus (three.js loaded from esm.sh CDN).
+- `script.js` — WebGL torus init. Lazy-loads `three.module.js` after
+  first paint so it doesn't block FCP/LCP.
+- `three.module.js` — self-hosted three.js (minified ESM, r160).
 - `jbm.woff2` / `jbm-italic.woff2` — self-hosted JetBrains Mono
   (Latin subset, variable weight). Eliminates the Google Fonts round-trip.
 - `favicon.svg` — wireframe torus, accent-colored.
@@ -54,8 +56,8 @@ Optimizations applied:
 - Fonts self-hosted with `rel="preload"` hints
 - `rel="modulepreload"` for `script.js` so it fetches in parallel with
   HTML parse
-- three.js still loaded from esm.sh (cached aggressively by their edge,
-  often warm-cached for visitors who hit other three.js sites)
+- three.js self-hosted + lazy-loaded after `window.load` so it doesn't
+  block FCP/LCP/TBT
 - `_headers` sets immutable 1-year cache on woff2 fonts, short cache on
   HTML so updates propagate quickly
 

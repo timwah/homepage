@@ -1,21 +1,37 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
-
-const canvas = document.getElementById('bg');
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-
-let renderer = null;
-if (window.WebGLRenderingContext) {
-  try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  } catch (e) {
-    renderer = null;
-  }
+// three.js is heavy; defer it past first paint so FCP/LCP fire on the
+// text content, then load WebGL once the main thread is idle.
+function boot() {
+  import('./three.module.js').then((THREE) => init(THREE)).catch(() => {});
 }
 
-if (renderer) init();
+if (document.readyState === 'complete') {
+  queueMicrotask(boot);
+} else {
+  window.addEventListener('load', () => {
+    // requestIdleCallback when available so we don't fight other work
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(boot, { timeout: 1500 });
+    } else {
+      setTimeout(boot, 0);
+    }
+  });
+}
 
-function init() {
+function init(THREE) {
+  const canvas = document.getElementById('bg');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+
+  let renderer = null;
+  if (window.WebGLRenderingContext) {
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    } catch (e) {
+      renderer = null;
+    }
+  }
+  if (!renderer) return;
+
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c7cf0';
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

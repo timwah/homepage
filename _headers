@@ -12,6 +12,9 @@
 /script.js
   Cache-Control: public, max-age=3600
 
+/three.module.js
+  Cache-Control: public, max-age=31536000, immutable
+
 /favicon.svg
   Cache-Control: public, max-age=86400
 
