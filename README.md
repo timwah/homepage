@@ -100,13 +100,39 @@ Steps:
 9. Visit https://timrobles.xyz in an incognito window to confirm
    everything works end-to-end with valid SSL.
 
-To update later:
-- Edit the files locally, then in the Pages project click "Create new
-  deployment" → "Upload assets" → drag the updated folder.
-- Or, switch to Git-connected later for auto-deploy on push.
+To update later, run `./deploy.sh` (see "Deploying updates" below).
+This avoids the dashboard click-through for every change.
 
 If anything breaks:
 - Check the Custom Domains tab for SSL status.
 - Check that DNS records (A or CNAME) in the DNS dashboard point at
   the Pages project — they should be auto-created and orange-clouded.
 - Hard-refresh (Cmd+Shift+R) to bypass Cloudflare's edge cache.
+
+## Deploying updates
+
+After the initial setup, use the bundled script:
+
+```bash
+./deploy.sh
+```
+
+One-time prerequisites:
+
+```bash
+npm install -g wrangler
+wrangler login
+```
+
+The script does `wrangler pages deploy . --project-name=timrobles-home
+--branch=main`. Wrangler hashes each file, asks Cloudflare which ones
+are missing from the edge, uploads only those, then creates a new
+production deployment. Typical deploy is ~5 seconds when nothing has
+changed except HTML.
+
+If your Pages project has a different name, edit `PROJECT_NAME` at the
+top of `deploy.sh`.
+
+Git pushes do NOT auto-deploy — this is intentional, so you can commit
+incremental changes without going live each time. Deploys happen only
+when you run `./deploy.sh`.
