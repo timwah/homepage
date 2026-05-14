@@ -113,22 +113,27 @@ function bootstrap() {
   const MAX_OFFSET = 0.07; // world units
   let targetX = 0, targetY = 0;
   let currentX = 0, currentY = 0;
-  let parallaxInitialized = false;
+  // The first observed cursor position becomes the parallax origin —
+  // so the torus starts at base and only shifts in response to how
+  // far the cursor moves *from* that point. Avoids any first-load
+  // jump from "torus at base" to "torus at parallax-offset-for-cursor".
+  let originX = null, originY = null;
 
   if (!isCoarsePointer) {
     window.addEventListener('mousemove', (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
-      targetX = -nx * MAX_OFFSET;
-      targetY = ny * MAX_OFFSET;
-      // On the very first mousemove after page load, snap current to
-      // target so the torus appears already-offset for the user's
-      // cursor position — no visible 1-second lerp from base on load.
-      if (!parallaxInitialized) {
-        currentX = targetX;
-        currentY = targetY;
-        parallaxInitialized = true;
+      if (originX === null) {
+        originX = nx;
+        originY = ny;
+        return; // first move just anchors the reference; no offset yet
       }
+      // Delta from origin, clamped so saturation matches the
+      // original mouse-anywhere-on-viewport range.
+      const dx = Math.max(-1, Math.min(1, nx - originX));
+      const dy = Math.max(-1, Math.min(1, ny - originY));
+      targetX = -dx * MAX_OFFSET;
+      targetY = dy * MAX_OFFSET;
     }, { passive: true });
   }
 
