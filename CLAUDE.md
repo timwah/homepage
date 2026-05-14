@@ -17,6 +17,12 @@ that aren't obvious from the code.
 - `sw.js` — service worker. Stale-while-revalidate cache strategy +
   auto-reload on update. `__VERSION__` is replaced by `deploy.sh`
   with the git short hash, so every deploy invalidates the cache.
+- `subset_fonts.py` — regenerates `jbm.woff2` / `jbm-italic.woff2`
+  by re-downloading the full Latin subset from Google Fonts and then
+  subsetting to just the characters used on the page (plus a safety
+  margin). Run if you add copy with new glyphs that aren't covered.
+  Drops hinting (not needed at our sizes) and unused tables, hits
+  ~71% reduction vs the full Latin subset.
 - `jbm.woff2` / `jbm-italic.woff2` — self-hosted JetBrains Mono
   (Latin subset, variable weight 400–500).
 - `favicon.svg` — wireframe torus echoing the WebGL form.
