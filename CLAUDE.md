@@ -11,11 +11,9 @@ that aren't obvious from the code.
 - `index.html` — markup + inlined CSS + inlined `@font-face` + JSON-LD
   + preload/modulepreload hints. All visual styles and metadata live
   in `<head>`.
-- `script.js` — WebGL torus init. Lazy-dynamic-imports `three.module.js`
-  after `window.load`. Mouse-driven positional parallax + very slow
-  ambient rotation.
-- `three.module.js` — self-hosted three.js r160 (minified ESM).
-  Served with immutable 1-year cache.
+- `script.js` — raw WebGL wireframe torus. No library — procedural
+  geometry, hand-written GLSL shaders, manual 4×4 matrix math.
+  Mouse-driven positional parallax + very slow ambient rotation.
 - `jbm.woff2` / `jbm-italic.woff2` — self-hosted JetBrains Mono
   (Latin subset, variable weight 400–500).
 - `favicon.svg` — wireframe torus echoing the WebGL form.
@@ -29,11 +27,10 @@ that aren't obvious from the code.
 - **CSS stays inlined in `index.html`.** No external stylesheet —
   inlining eliminates a render-blocking round trip. Edit inside the
   `<style>` block in `<head>`.
-- **three.module.js is self-hosted and lazy-loaded.** The module is
-  dynamic-imported inside a `window.load` + `requestIdleCallback`
-  handler so it doesn't block FCP/LCP/TBT. Don't move it back to a
-  CDN or static import — that's what caused the Lighthouse Performance
-  hit before.
+- **No 3D library — raw WebGL only.** We use ~5% of three.js, so
+  hand-rolled the whole thing (~150 lines, ~9 KB). Don't reach for
+  three.js / OGL / similar without a strong reason. If you add a new
+  geometry, write a procedural generator alongside `makeTorusWireframe`.
 - **Don't auto-deploy on git push.** Tim runs `./deploy.sh` manually
   when he wants changes live. Git is decoupled from deploys
   intentionally so incremental commits don't ship.

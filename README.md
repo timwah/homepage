@@ -7,9 +7,8 @@ No build step.
 
 - `index.html` — markup, inlined CSS, inlined font @font-face, JSON-LD,
   and preload/modulepreload hints. CSS edits happen inside `<style>`.
-- `script.js` — WebGL torus init. Lazy-loads `three.module.js` after
-  first paint so it doesn't block FCP/LCP.
-- `three.module.js` — self-hosted three.js (minified ESM, r160).
+- `script.js` — raw WebGL wireframe torus (~9 KB, no library).
+  Procedural torus geometry, hand-written shaders, manual matrix math.
 - `jbm.woff2` / `jbm-italic.woff2` — self-hosted JetBrains Mono
   (Latin subset, variable weight). Eliminates the Google Fonts round-trip.
 - `favicon.svg` — wireframe torus, accent-colored.
@@ -56,14 +55,15 @@ Optimizations applied:
 - Fonts self-hosted with `rel="preload"` hints
 - `rel="modulepreload"` for `script.js` so it fetches in parallel with
   HTML parse
-- three.js self-hosted + lazy-loaded after `window.load` so it doesn't
-  block FCP/LCP/TBT
+- WebGL is hand-rolled (no three.js, no OGL) — ~9 KB script.js
+  replaces the ~170 KB three.js dependency. No lazy-load gymnastics
+  needed because the bundle is tiny enough to run inline.
 - `_headers` sets immutable 1-year cache on woff2 fonts, short cache on
   HTML so updates propagate quickly
 
-Page weight after first paint: HTML ~7KB + 2 fonts ~64KB + script.js ~5KB
-(+ three.js ~170KB gzipped). All except three.js comes from the origin
-on the same connection.
+Page weight after first paint: HTML ~7 KB + 2 fonts ~64 KB + script.js
+~9 KB. Everything served from the same origin, no third-party requests.
+Total transfer well under 100 KB.
 
 ## Deployment — getting this live on timrobles.xyz
 

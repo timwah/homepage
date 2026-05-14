@@ -1,92 +1,112 @@
-// three.js is heavy; defer it past first paint so FCP/LCP fire on the
-// text content, then load WebGL once the main thread is idle.
-function boot() {
-  import('./three.module.js').then((THREE) => init(THREE)).catch(() => {});
-}
+// Raw WebGL wireframe torus. No library.
+// Procedural geometry, hand-written shaders, manual matrix math.
 
-if (document.readyState === 'complete') {
-  queueMicrotask(boot);
-} else {
-  window.addEventListener('load', () => {
-    // requestIdleCallback when available so we don't fight other work
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(boot, { timeout: 1500 });
-    } else {
-      setTimeout(boot, 0);
+const canvas = document.getElementById('bg');
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+
+const gl = canvas && canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: true });
+if (gl) bootstrap();
+// If gl is null (no WebGL or context creation failed), the SVG fallback in
+// the DOM remains visible because we never add the .active class.
+
+function bootstrap() {
+  const accentHex = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c7cf0';
+  const [aR, aG, aB] = hexToRgb(accentHex);
+  const ALPHA = 0.55;
+
+  // ── Shaders ───────────────────────────────────────────────────
+  const vs = `
+    attribute vec3 a_pos;
+    uniform mat4 u_proj;
+    uniform mat4 u_mv;
+    void main() {
+      gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
     }
-  });
-}
-
-function init(THREE) {
-  const canvas = document.getElementById('bg');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-
-  let renderer = null;
-  if (window.WebGLRenderingContext) {
-    try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    } catch (e) {
-      renderer = null;
+  `;
+  const fs = `
+    precision mediump float;
+    uniform vec4 u_color;
+    void main() {
+      // premultiplied alpha for correct compositing with the page background
+      gl_FragColor = vec4(u_color.rgb * u_color.a, u_color.a);
     }
-  }
-  if (!renderer) return;
-
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c7cf0';
-
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 0, 10);
-  camera.lookAt(0, 0, 0);
+  `;
+  const prog = makeProgram(gl, vs, fs);
+  if (!prog) return;
+  gl.useProgram(prog);
 
   // ── Geometric form ────────────────────────────────────────────
-  // To change the form, replace the next two lines with another
-  // THREE primitive (e.g. IcosahedronGeometry, BoxGeometry).
-  const geometry = new THREE.TorusGeometry(1, 0.32, 16, 80);
-  const wire = new THREE.WireframeGeometry(geometry);
-  const material = new THREE.LineBasicMaterial({
-    color: new THREE.Color(accent),
-    transparent: true,
-    opacity: 0.55,
-  });
-  const torus = new THREE.LineSegments(wire, material);
+  // To change the form, replace makeTorusWireframe with another
+  // procedural generator returning {positions, indices}.
+  const { positions, indices } = makeTorusWireframe(1, 0.32, 16, 80);
+
+  const posBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+  const idxBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuf);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+
+  const uProj = gl.getUniformLocation(prog, 'u_proj');
+  const uMV = gl.getUniformLocation(prog, 'u_mv');
+  const uColor = gl.getUniformLocation(prog, 'u_color');
+
+  gl.uniform4f(uColor, aR, aG, aB, ALPHA);
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 0);
+
+  // ── Scene constants ───────────────────────────────────────────
+  const FOV = 30 * Math.PI / 180;
+  const CAMERA_Z = 10;
+  const NEAR = 0.1, FAR = 100;
   const baseRotX = 0.55;
   const baseRotY = -0.2;
-  torus.rotation.x = baseRotX;
-  torus.rotation.y = baseRotY;
-  scene.add(torus);
 
   let basePosX = 0, basePosY = 0;
+  let scale = 1;
+  let projection;
 
   function layout() {
-    const mobile = window.innerWidth < 768;
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
-    // Anchor torus to upper-left region, sized so the hole reads on screen
-    const halfH = camera.position.z * Math.tan((camera.fov * Math.PI / 180) / 2);
-    const halfW = halfH * camera.aspect;
+    const aspect = window.innerWidth / window.innerHeight;
+    const halfH = CAMERA_Z * Math.tan(FOV / 2);
+    const halfW = halfH * aspect;
     basePosX = -halfW * 0.55;
     basePosY = halfH * 0.35;
-    torus.position.set(basePosX, basePosY, 0);
-    torus.scale.setScalar(mobile ? 2.8 : 3.8);
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    scale = window.innerWidth < 768 ? 2.8 : 3.8;
+
+    projection = perspective(FOV, aspect, NEAR, FAR);
+    gl.uniformMatrix4fv(uProj, false, projection);
   }
   layout();
 
   canvas.classList.add('active');
 
+  function drawFrame(rotX, rotY, posX, posY) {
+    gl.uniformMatrix4fv(uMV, false, modelView(posX, posY, 0, rotX, rotY, scale, CAMERA_Z));
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_SHORT, 0);
+  }
+
   // ── Reduced motion: single static frame ───────────────────────
   if (reducedMotion) {
-    renderer.render(scene, camera);
+    drawFrame(baseRotX, baseRotY, basePosX, basePosY);
     window.addEventListener('resize', () => {
       layout();
-      renderer.render(scene, camera);
+      drawFrame(baseRotX, baseRotY, basePosX, basePosY);
     });
     return;
   }
@@ -97,7 +117,6 @@ function init(THREE) {
   let currentX = 0, currentY = 0;
 
   if (!isCoarsePointer) {
-    // Desktop: mouse shifts the torus opposite to cursor direction
     window.addEventListener('mousemove', (e) => {
       const nx = (e.clientX / window.innerWidth) * 2 - 1;
       const ny = (e.clientY / window.innerHeight) * 2 - 1;
@@ -118,9 +137,7 @@ function init(THREE) {
   let rafId = null;
   document.addEventListener('visibilitychange', () => {
     visible = !document.hidden;
-    if (visible && rafId == null) {
-      rafId = requestAnimationFrame(loop);
-    }
+    if (visible && rafId == null) rafId = requestAnimationFrame(loop);
   });
 
   const start = performance.now();
@@ -133,15 +150,102 @@ function init(THREE) {
     const t = (performance.now() - start) / 1000;
     const linearAngle = (t / 420) * Math.PI * 2;
     const eased = Math.sin(t / 45 * Math.PI * 2) * 0.06;
-    torus.rotation.y = baseRotY + linearAngle + eased;
+    const rotY = baseRotY + linearAngle + eased;
 
-    // Position parallax — target is 0 until input arrives
     currentX += (targetX - currentX) * 0.05;
     currentY += (targetY - currentY) * 0.05;
-    torus.position.set(basePosX + currentX, basePosY + currentY, 0);
 
-    renderer.render(scene, camera);
+    drawFrame(baseRotX, rotY, basePosX + currentX, basePosY + currentY);
+
     rafId = requestAnimationFrame(loop);
   }
   rafId = requestAnimationFrame(loop);
+}
+
+// ── WebGL helpers ───────────────────────────────────────────────
+
+function makeProgram(gl, vsSrc, fsSrc) {
+  const vs = compile(gl, gl.VERTEX_SHADER, vsSrc);
+  const fs = compile(gl, gl.FRAGMENT_SHADER, fsSrc);
+  if (!vs || !fs) return null;
+  const p = gl.createProgram();
+  gl.attachShader(p, vs);
+  gl.attachShader(p, fs);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
+  return p;
+}
+
+function compile(gl, type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) return null;
+  return s;
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16) / 255,
+    parseInt(h.slice(2, 4), 16) / 255,
+    parseInt(h.slice(4, 6), 16) / 255,
+  ];
+}
+
+// Wireframe torus: vertices on the surface + line indices that mirror
+// what three.js WireframeGeometry produces from a triangulated mesh
+// (right edge, down edge, diagonal per quad).
+function makeTorusWireframe(R, r, radialSegs, tubularSegs) {
+  const positions = new Float32Array(radialSegs * tubularSegs * 3);
+  const indices = new Uint16Array(radialSegs * tubularSegs * 6);
+  let p = 0;
+  for (let i = 0; i < radialSegs; i++) {
+    const v = (i / radialSegs) * Math.PI * 2;
+    const cv = Math.cos(v), sv = Math.sin(v);
+    for (let j = 0; j < tubularSegs; j++) {
+      const u = (j / tubularSegs) * Math.PI * 2;
+      const cu = Math.cos(u), su = Math.sin(u);
+      positions[p++] = (R + r * cv) * cu;
+      positions[p++] = (R + r * cv) * su;
+      positions[p++] = r * sv;
+    }
+  }
+  let q = 0;
+  for (let i = 0; i < radialSegs; i++) {
+    for (let j = 0; j < tubularSegs; j++) {
+      const a = i * tubularSegs + j;
+      const b = i * tubularSegs + ((j + 1) % tubularSegs);
+      const c = ((i + 1) % radialSegs) * tubularSegs + j;
+      const d = ((i + 1) % radialSegs) * tubularSegs + ((j + 1) % tubularSegs);
+      indices[q++] = a; indices[q++] = b;
+      indices[q++] = a; indices[q++] = c;
+      indices[q++] = a; indices[q++] = d;
+    }
+  }
+  return { positions, indices };
+}
+
+// 4×4 perspective matrix in column-major flat form (WebGL convention).
+function perspective(fov, aspect, near, far) {
+  const f = 1 / Math.tan(fov / 2);
+  return new Float32Array([
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (far + near) / (near - far), -1,
+    0, 0, (2 * far * near) / (near - far), 0,
+  ]);
+}
+
+// Composed view × translate × rotateY × rotateX × uniformScale matrix,
+// flattened column-major. Avoids stacking generic mat4 multiplies.
+function modelView(tx, ty, tz, rotX, rotY, s, cameraZ) {
+  const ca = Math.cos(rotX), sa = Math.sin(rotX);
+  const cb = Math.cos(rotY), sb = Math.sin(rotY);
+  return new Float32Array([
+    s * cb,        0,       -s * sb,            0,
+    s * sa * sb,   s * ca,   s * sa * cb,       0,
+    s * ca * sb,  -s * sa,   s * ca * cb,       0,
+    tx,            ty,       tz - cameraZ,      1,
+  ]);
 }
