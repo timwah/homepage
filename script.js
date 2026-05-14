@@ -138,14 +138,13 @@ function bootstrap() {
     if (visible && rafId == null) rafId = requestAnimationFrame(loop);
   });
 
-  const start = performance.now();
-
   function loop() {
     rafId = null;
     if (!visible) return;
 
-    // Slow eased drift (linear rotation + sine wobble for organic speed variation)
-    const t = (performance.now() - start) / 1000;
+    // Wall-clock time so the rotation continues across page reloads
+    // instead of resetting to baseRotY on every load.
+    const t = Date.now() / 1000;
     const linearAngle = (t / 420) * Math.PI * 2;
     const eased = Math.sin(t / 45 * Math.PI * 2) * 0.06;
     const rotY = baseRotY + linearAngle + eased;
