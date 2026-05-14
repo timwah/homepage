@@ -13,7 +13,19 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  // Use cache:'reload' so each asset is fetched fresh from the network,
+  // bypassing the browser's HTTP cache. Without this, the SW would
+  // pick up stale copies of files like script.js (1-week max-age)
+  // even though the server has new content from a recent deploy.
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      Promise.all(ASSETS.map((url) =>
+        fetch(url, { cache: 'reload' }).then((resp) => {
+          if (resp && resp.ok) return c.put(url, resp);
+        })
+      ))
+    )
+  );
 });
 
 self.addEventListener('activate', (e) => {
