@@ -7,8 +7,8 @@ const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
 
 const gl = canvas && canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: true });
 if (gl) bootstrap();
-// If gl is null (no WebGL or context creation failed), the SVG fallback in
-// the DOM remains visible because we never add the .active class.
+// If gl is null (no WebGL or context creation failed), the canvas stays
+// transparent and the html background shows through.
 
 function bootstrap() {
   const accentHex = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7c7cf0';
@@ -92,8 +92,6 @@ function bootstrap() {
     gl.uniformMatrix4fv(uProj, false, projection);
   }
   layout();
-
-  canvas.classList.add('active');
 
   function drawFrame(rotX, rotY, posX, posY) {
     gl.uniformMatrix4fv(uMV, false, modelView(posX, posY, 0, rotX, rotY, scale, CAMERA_Z));

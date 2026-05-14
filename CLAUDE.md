@@ -88,6 +88,6 @@ project name is `timrobles-home` on Cloudflare account
 - No icons, emoji, decorative dividers, or "available for work" copy.
 - No analytics scripts, no cookie banner.
 - `prefers-reduced-motion` respected — renders a single static frame.
-- Page is fully readable without JS (SVG torus fallback shows when
-  WebGL isn't active).
+- Page is fully readable without JS (text is the primary content; the
+  WebGL torus is purely decorative).
 - WCAG AA contrast.
