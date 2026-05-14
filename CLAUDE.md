@@ -14,6 +14,9 @@ that aren't obvious from the code.
 - `script.js` — raw WebGL wireframe torus. No library — procedural
   geometry, hand-written GLSL shaders, manual 4×4 matrix math.
   Mouse-driven positional parallax + very slow ambient rotation.
+- `sw.js` — service worker. Stale-while-revalidate cache strategy +
+  auto-reload on update. `__VERSION__` is replaced by `deploy.sh`
+  with the git short hash, so every deploy invalidates the cache.
 - `jbm.woff2` / `jbm-italic.woff2` — self-hosted JetBrains Mono
   (Latin subset, variable weight 400–500).
 - `favicon.svg` — wireframe torus echoing the WebGL form.
@@ -31,6 +34,12 @@ that aren't obvious from the code.
   hand-rolled the whole thing (~150 lines, ~9 KB). Don't reach for
   three.js / OGL / similar without a strong reason. If you add a new
   geometry, write a procedural generator alongside `makeTorusWireframe`.
+- **Service worker uses `__VERSION__` placeholder, NOT a hard-coded
+  version.** `deploy.sh` injects the git short hash at deploy time
+  into a temp build dir, so cache invalidation is automatic per deploy.
+  Don't manually edit `VERSION` in `sw.js`. SW registration is skipped
+  on `localhost` / `127.0.0.1` so dev edits never get masked by SW
+  cache — only production has SW caching.
 - **Don't auto-deploy on git push.** Tim runs `./deploy.sh` manually
   when he wants changes live. Git is decoupled from deploys
   intentionally so incremental commits don't ship.

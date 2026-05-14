@@ -14,6 +14,9 @@
 /script.js
   Cache-Control: public, max-age=3600
 
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /favicon.svg
   Cache-Control: public, max-age=86400
 
